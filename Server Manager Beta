@@ -1,0 +1,299 @@
+#!/bin/bash
+if [ $# -eq 0 ]
+  then
+    echo "Server ID not specified!"
+    echo "Usage: startserver.sh SERVER_ID"
+    exit 1
+fi
+
+if [ ! -f ./server/config.$1 ]
+  then
+    echo "Impossible to read configuration file: ./server/config."$1
+    exit 2
+fi
+
+ARCH="x86"
+case $(uname -m) in
+x86_64)
+    ARCH="x86_64"
+    ;;
+i*86) # i585, i686
+    ARCH="x86"
+    ;;
+*)
+    # leave ARCH as-is
+    ;;
+esac
+# Force x86
+ARCH="x86"
+echo Starting server using server configuration $1
+chmod 0777 ./server/blockstormServer.$ARCH
+PORT=$(awk '$1 == "PORT" {print $2}' ./server/config.$1)
+REMOTE_MANAGER_PORT=$(awk '$1 == "REMOTE_MANAGER_PORT" {print $2}' ./server/config.$1)
+LD_LIBRARY_PATH=./steam/$ARCH ./server/blockstormServer.$ARCH -config ./server/config.$1 -logfile $1.log &
+server=$1
+PID=$!
+sed -i '/^$1 /d' .runningServers
+echo "$1 $PID $REMOTE_MANAGER_PORT $PORT" >> .runningServers
+#echo loading ...
+#wait $PID
+function load
+{
+sleep 1
+printf "\033c"
+echo -ne 'Starting Server ...                  \n[#########                                         ]\t(18%)\r'
+sleep 1
+printf "\033c"
+echo -ne 'Starting Server ...                  \n[######################                            ]\t(44%)\r'
+sleep 1
+printf "\033c"
+echo -ne 'Starting Server ...                  \n[##############################                    ]\t(60%)\r'
+sleep 1
+printf "\033c"
+echo -ne 'Starting Server Manager 0.01[BETA] ...\n[#################################                 ]\t(65%)\r'
+sleep 1
+printf "\033c"
+echo -ne 'Starting Server Manager 0.01[BETA] ...\n[#############################################     ]\t(90%)\r'
+sleep 1
+printf "\033c"
+echo -ne 'Starting Server Manager 0.01[BETA] ...\n[##################################################]\t(100%)\r'
+echo -ne '\n'
+printf "\033c"  
+
+# Regular Colors
+Black='\e[0;30m'        # Nero
+Red='\e[0;31m'          # Rosso
+Green='\e[0;32m'        # Verde
+Yellow='\e[0;33m'       # Giallo
+Blue='\e[0;34m'         # Blu
+Purple='\e[0;35m'       # Viola
+Cyan='\e[0;36m'         # Ciano
+White='\e[0;37m'        # Bianco
+
+# Bold
+BBlack='\e[1;30m'       # Nero
+BRed='\e[1;31m'         # Rosso
+BGreen='\e[1;32m'       # Verde
+BYellow='\e[1;33m'      # Giallo
+BBlue='\e[1;34m'        # Blu
+BPurple='\e[1;35m'      # Viola
+BCyan='\e[1;36m'        # Ciano
+BWhite='\e[1;37m'       # Bianco
+
+# Underline
+UBlack='\e[4;30m'       # Nero
+URed='\e[4;31m'         # Rosso
+UGreen='\e[4;32m'       # Verde
+UYellow='\e[4;33m'      # Giallo
+UBlue='\e[4;34m'        # Blu
+UPurple='\e[4;35m'      # Viola
+UCyan='\e[4;36m'        # Ciano
+UWhite='\e[4;37m'       # Bianco
+
+# Background
+On_Black='\e[40m'       # Nero
+On_Red='\e[41m'         # Rosso
+On_Green='\e[42m'       # Verde
+On_Yellow='\e[43m'      # Giallo
+On_Blue='\e[44m'        # Blu
+On_Purple='\e[45m'      # Purple
+On_Cyan='\e[46m'        # Ciano
+On_White='\e[47m'       # Bianco
+
+# High Intensty
+IBlack='\e[0;90m'       # Nero
+IRed='\e[0;91m'         # Rosso
+IGreen='\e[0;92m'       # Verde
+IYellow='\e[0;93m'      # Giallo
+IBlue='\e[0;94m'        # Blu
+IPurple='\e[0;95m'      # Viola
+ICyan='\e[0;96m'        # Ciano
+IWhite='\e[0;97m'       # Bianco
+
+# Bold High Intensty
+BIBlack='\e[1;90m'      # Nero
+BIRed='\e[1;91m'        # Rosso
+BIGreen='\e[1;92m'      # Verde
+BIYellow='\e[1;93m'     # Giallo
+BIBlue='\e[1;94m'       # Blu
+BIPurple='\e[1;95m'     # Viola
+BICyan='\e[1;96m'       # Ciano
+BIWhite='\e[1;97m'      # Bianco
+
+# High Intensty backgrounds
+On_IBlack='\e[0;100m'   # Nero
+On_IRed='\e[0;101m'     # Rosso
+On_IGreen='\e[0;102m'   # Verde
+On_IYellow='\e[0;103m'  # Giallo
+On_IBlue='\e[0;104m'    # Blu
+On_IPurple='\e[10;95m'  # Viola
+On_ICyan='\e[0;106m'    # Ciano
+On_IWhite='\e[0;107m'   # Bianco
+}
+function auth 
+{
+echo -e "${BBue}Welcome in the Server Manager 0.01[BETA] \n"
+}
+function back 
+{
+printf "\n\tType - b - to go back "
+read -n 1 esc
+if [ $esc == "b" ]
+	then
+		printf "\033c"  
+		option
+	fi
+
+}
+function kick
+{
+	showBase
+	printf "\n\nType the  N.  of the player you want to kick : "
+	read kickid
+	ind=$kickid
+	tmp=${matrix[$((kickid-1)),$zero]}
+	kickid=$tmp
+	printf "\nAre you sure to kick player N. %s ?(y/n) : " "$ind"
+	read sure
+	if [ $sure == "y" ]
+	then
+		./kickPlayer.sh $server $kickid
+		printf "\033c"  
+		echo -e "${IRed}ALERT : Player N : $ind KICKED ${IGreen}"
+		Main
+	else
+		printf "\033c"  
+		Main
+	fi
+}
+function ban
+{
+	showBase
+	printf "\n\nType the  N.  of the player you want to ban : "
+	read banid
+	ind=$banid
+	tmp=${matrix[$((banid-1)),$zero]}
+	banid=$tmp
+	printf "\nAre you sure to ban player N. %s ?(y/n) : " "$ind"
+	read sure
+	if [ $sure == "y" ]
+	then
+		./banPlayer.sh $server  $banid
+		printf "\033c"  
+		echo -e "${IRed}ALERT : Player N : $ind BANNED ${IGreen}"
+		Main
+	else
+		printf "\033c"  
+		Main
+	fi
+}
+function option
+{
+auth
+echo -e ""
+PS3='Please enter your choice: '
+options=("Ban Player" "Kick Player" "Close Server" "Close Manager" "Go Back" )
+select opt in "${options[@]}"
+do
+    case $opt in
+        "Ban Player")
+		   	printf "\033c"  	
+            ban
+            ;;
+        "Kick Player")
+		  printf "\033c"  
+          kick
+            ;;
+        "Close Server")
+		  printf "\033c" 	 
+		    echo ServerManager: Server closed successfully !
+			./stopservers.sh
+			exit
+			  printf "\033c" 
+            ;;
+			 "Close Manager")
+			 printf "\033c"  
+		     exit
+		  Main
+            ;;
+			 "Go Back")
+		  printf "\033c"  
+		  Main
+            ;;
+        *) 
+		 printf "\033c"  
+		echo -e "${IRed}ALERT : invalid option${IGreen}"
+		option
+		;;
+    esac
+done
+}
+function showBase
+{
+auth
+righe=$(wc -l $filename | awk '{print $1}')
+riga=1		  i=0		conta=0		j=0
+echo -e "${UGreen}\n${IGreen}Players :\n\n|N. \t |Name :\t    |Score :\n" 
+while [ $riga -lt $((righe-1)) ]; 
+		do
+			i=$conta 
+			let riga+=1
+			current=$(head -$riga $filename | tail -1)
+			conta=$((i+1)) 
+			echo -e "${IGreen}|$((riga-1))\t |${current:18} "
+done
+}
+function Main
+{
+esc=""
+echo -e "Server : $server"
+declare -A matrix
+num_rows=16
+num_columns=4			
+for ((i=0;i<=num_rows;i++)) do
+    for ((j=0;j<=num_columns;j++)) do
+        matrix[$i,$j]=0
+    done
+done
+zero=0		uno=1 		due=2		tre=3 		quattro=4		scorepast=0		score=0 	giro=0		filename="score.txt" 		e="e"
+  printf "\033c"
+  ./getListOfPlayers.sh $server > ./score.txt
+  righe=$(wc -l $filename | awk '{print $1}')
+  riga=1		  i=0		conta=0		j=0
+	while [ $riga -lt $((righe-1)) ]; 
+		do
+			i=$conta 
+			let riga+=1
+			current=$(head -$riga $filename | tail -1)
+			id=$(echo $current | cut -d " " -f1) 
+			readscore=$(echo $current | cut -d ":" -f2)
+			if [ $readscore -ne $score ]		
+			then
+					scorepast=$score
+					score=$readscore
+					giro=`expr $giro + 1`
+			fi
+			matrix[$i,$zero]=$id
+			matrix[$i,$uno]=$score
+			matrix[$i,$due]=$scorepast
+			matrix[$i,$tre]=$giro
+			conta=$((i+1)) 
+		done
+	showBase 
+	printf "\n    Type - e - for more options \n\t\t"
+	read -n 1 -t 1 esc
+	if [ $esc == "e"  ]
+	then
+		printf "\033c"  
+		option
+	else
+		printf "\033c"  
+		Main
+	fi
+}
+load
+while :
+do
+Main 
+done
+}
