@@ -1,2 +1,2 @@
 # BlockstormMod
-Server Manager for Blockstorm's servers
+Server Manager for Blockstorm server
